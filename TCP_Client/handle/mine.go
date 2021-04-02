@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash"
+	"log"
 	"math/big"
 	"time"
 
@@ -54,7 +55,7 @@ func (w Worker) mine(abort chan bool, ethash *Ethash) {
 
 	var (
 		hash   = (common.HexToHash(w.Work.Hash)).Bytes() //矿池发过来的
-		height = w.Work.Seed                             //随机数
+		height = w.Work.Seed                             //高度
 		cache  = ethash.cache(height)                    //这里需要区块高度
 	)
 	var nonce uint64
@@ -68,13 +69,11 @@ search:
 			// Compute the PoW value of this nonce
 			digest, result := hashimotoLight(cacheSize(height), cache.cache, hash, nonce)
 			if new(big.Int).SetBytes(result).Cmp(w.Work.Target) <= 0 {
-				fmt.Println("send share success")
+				log.Println("send share success")
 				i := w.Work.Hash
-
-				fmt.Println("cacheSize:", cacheSize(height), "nonce:", nonce, "height", uint64(height))
-				fmt.Println("hash:", hash)
-				fmt.Println("result:", result)
-				//fmt.Println("cache:", cache)
+				log.Println("cacheSize:", cacheSize(height), "nonce:", nonce, "height", uint64(height))
+				log.Println("hash:", hash)
+				log.Println("result:", result)
 				w.NewTcpSubmitWork(digest, nonce, i)
 			}
 			nonce++

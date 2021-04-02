@@ -16,8 +16,6 @@ import (
 	"time"
 	"unsafe"
 
-	//"golang-lru/simplelru"
-
 	"github.com/edsrzf/mmap-go"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/bitutil"
@@ -40,17 +38,6 @@ type Ethash struct {
 	config Config
 	caches *lru          // In memory caches to avoid regenerating too often
 	update chan struct{} // Notification channel to update mining parameters
-	// Mining related fields
-	//rand     *rand.Rand    // Properly seeded random source for nonces
-	//threads  int           // Number of threads to mine on if mining
-	//hashrate metrics.Meter // Meter tracking the average hashrate
-	//remote   *remoteSealer
-	// The fields below are hooks for testing
-	//shared    *Ethash       // Shared PoW verifier to avoid cache regeneration
-	//fakeFail  uint64        // Block number which fails PoW check even in fake mode
-	//fakeDelay time.Duration // Time delay to sleep for before returning from verify
-	//lock      sync.Mutex // Ensures thread safety for the in-memory caches and mining fields
-	//closeOnce sync.Once // Ensures exit channel will not be closed twice.
 }
 
 type cache struct {
@@ -68,15 +55,6 @@ type Config struct {
 	PowMode        Mode
 	CachesOnDisk   int
 	CachesLockMmap bool
-	//DatasetDir       string
-	//DatasetsInMem    int
-	//DatasetsOnDisk   int
-	//DatasetsLockMmap bool
-	//CachesInMem      int
-	// When set, notifications sent by the remote sealer will
-	// be block header JSON objects instead of work package arrays.
-	//NotifyFull bool
-	//Log log.Logger `toml:"-"`
 }
 
 type lru struct {
@@ -127,7 +105,6 @@ func (ethash *Ethash) cache(block uint64) *cache {
 	current.generate(ethash.config.CacheDir, ethash.config.CachesOnDisk, ethash.config.CachesLockMmap, ethash.config.PowMode == ModeTest)
 	// If we need a new future cache, now's a good time to regenerate it.
 	if futureI != nil {
-		fmt.Println("futureI")
 		future := futureI.(*cache)
 		go future.generate(ethash.config.CacheDir, ethash.config.CachesOnDisk, ethash.config.CachesLockMmap, ethash.config.PowMode == ModeTest)
 	}

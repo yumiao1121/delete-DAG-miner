@@ -10,12 +10,11 @@ import (
 )
 
 func main() {
-	times := 1
+	times := 1 //开启节点数量
 	logInit()
-	var exit chan bool
-	exit = make(chan bool, 1)
+	exit := make(chan bool, 1)
 	for i := 0; i < times; i++ {
-		go handle.NewWorker(i, exit)
+		go handle.NewWorker(i, exit) //开启节点线程
 	}
 	i := 0
 	for {
@@ -26,6 +25,7 @@ func main() {
 		}
 	}
 }
+
 func logInit() {
 	var logFileName = flag.String("log", "cServer.log", "Log file name")
 	runtime.GOMAXPROCS(runtime.NumCPU())

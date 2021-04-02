@@ -8,13 +8,6 @@ import (
 	"net"
 )
 
-type ConnInfo struct {
-	Conn    net.Conn
-	Address string
-	Id      int
-	Ip      string
-}
-
 type login struct {
 	Id     int         `json:"id"`
 	Method string      `json:"method"`
@@ -79,7 +72,6 @@ func (w *Worker) NewTcpLogin() bool {
 			return true
 		}
 	}
-
 	return false
 }
 

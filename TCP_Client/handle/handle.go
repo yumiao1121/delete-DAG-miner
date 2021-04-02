@@ -9,35 +9,40 @@ import (
 	"strconv"
 )
 
-type Worker struct {
+type Worker struct { //每个节点对应一个work
 	//sync.Mutex
 	Conntcp ConnInfo
 	Work    Work
 }
-type Work struct {
+
+type Work struct { //接受矿池下发的工作保存
 	Hash   string
-	Target *big.Int //
+	Target *big.Int
 	Seed   uint64
+}
+
+type ConnInfo struct { //节点信息
+	Conn    net.Conn
+	Address string
+	Id      int
+	Ip      string
 }
 
 func NewWorker(id int, exit chan bool) {
 	conn, err := net.Dial("tcp", "0.0.0.0:8008") //连接矿池
 	if err != nil {
-		fmt.Println("client dial err=", err)
+		log.Println("connect Server dial err=", err)
+		exit <- true
 		return
 	}
 	defer conn.Close()
-	conntcp := NewConnTcp(conn, id, "0xb85150eb365e7df0941f0cf08235f987ba91506a", "0.0.0.0")
+
+	conntcp := NewConnTcp(conn, id, "0x6c9019e157adb466f353498ed1bacf8a95f3544c", "0.0.0.0")
 	worker := Worker{
 		Conntcp: conntcp,
 	}
-
+	//计算share target
 	two256 := new(big.Int).Exp(big.NewInt(2), big.NewInt(256), big.NewInt(0))
-	//	diff, err1 := new(big.Int).SetString("4096", 0)
-	// if !err1 {
-	// 	fmt.Println("diff compute err")
-	// 	return
-	// }
 	target := new(big.Int).Div(two256, big.NewInt(1000))
 
 	work := Work{
@@ -60,49 +65,45 @@ func Start(worker *Worker) {
 	}
 	abort := make(chan bool, 10)
 
-	go worker.MessageDistrbution(abort)
+	go worker.MessageDistrbution(abort, nodeover)
 	go worker.Miner(abort)
 
 	<-nodeover
 }
 
-func (w *Worker) MessageDistrbution(abort chan bool) {
+func (w *Worker) MessageDistrbution(abort chan bool, nodeover chan bool) { //消息分发
 	for {
 		buf := make([]byte, 8096)
 		n, err := w.Conntcp.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("Getwork Read error:", err)
+			nodeover <- true
 			break
 		}
 
 		var result reply
 		err = json.Unmarshal(buf[:n], &result)
 		if err != nil {
-			fmt.Println("json.Unmarsha err=", err)
+			log.Println("json.Unmarsha err=", err)
+			continue
 		}
 
-		if slice, ok := result.Result.([]interface{}); ok {
-			fmt.Println(result)
+		if slice, ok := result.Result.([]interface{}); ok { //类型断言，将接收到的消息断言为inferface{}类型
+			log.Println(result)
 			if len(slice) == 3 {
 				if slice[0] != w.Work.Hash {
-					// res, _ := slice[1].(string)
-					// seed, err := strconv.Atoi(res) //0:hash 1:seed 2:diff
-					// w.Work.Seed = uint64(seed)
-					// if err != nil {
-					// 	fmt.Println("w.Work.seed transformation err")
-					// 	return
-					// }
-					res, _ := slice[0].(string)
+					res, _ := slice[0].(string) //区块hash
 					w.Work.Hash = res
-					num, _ := slice[1].(string)
-					fmt.Println("res:", res, "height:", num)
+
+					num, _ := slice[1].(string) //区块高度
+					//fmt.Println("res:", res, "height:", num)
 					Uintnum, _ := strconv.Atoi(num)
 					w.Work.Seed = uint64(Uintnum)
-					abort <- true
+					abort <- true //chan 更新work后在挖
 				}
 			}
 		} else {
-			fmt.Println("result:", result)
+			log.Println("return result:", result)
 		}
 	}
 
