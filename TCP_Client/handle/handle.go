@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -67,44 +68,55 @@ func Start(worker *Worker) {
 }
 
 func (w *Worker) MessageDistrbution(abort chan bool) {
+	//enc := json.NewEncoder(w.Conntcp.Conn)
+	connbuf := bufio.NewReaderSize(w.Conntcp.Conn, 8096)
 	for {
-		buf := make([]byte, 8096)
-		n, err := w.Conntcp.Conn.Read(buf)
+		data, _, err := connbuf.ReadLine()
 		if err != nil {
 			fmt.Println("Getwork Read error:", err)
-			//fmt.Println("buf len", buf)
-			//continue
-			break
 		}
 
-		var result reply
-		err = json.Unmarshal(buf[:n], &result)
-		if err != nil {
-			fmt.Println("json.Unmarsha err=", err)
-		}
-
-		if slice, ok := result.Result.([]interface{}); ok {
-			fmt.Println(result)
-			if len(slice) == 3 {
-				if slice[0] != w.Work.Hash {
-					// res, _ := slice[1].(string)
-					// seed, err := strconv.Atoi(res) //0:hash 1:seed 2:diff
-					// w.Work.Seed = uint64(seed)
-					// if err != nil {
-					// 	fmt.Println("w.Work.seed transformation err")
-					// 	return
-					// }
-					res, _ := slice[0].(string)
-					w.Work.Hash = res
-					num, _ := slice[1].(string)
-					fmt.Println("res:", res, "height:", num)
-					Uintnum, _ := strconv.Atoi(num)
-					w.Work.Seed = uint64(Uintnum)
-					abort <- true
-				}
+		//以下为原本的
+		// buf := make([]byte, 8096)
+		// n, err := w.Conntcp.Conn.Read(buf)
+		// if err != nil {
+		// 	fmt.Println("Getwork Read error:", err)
+		// 	//fmt.Println("buf len", buf)
+		// 	//continue
+		// 	break
+		// }
+		//
+		if len(data) > 1 { //新加的
+			var result reply
+			err = json.Unmarshal(data, &result)
+			//err = json.Unmarshal(buf[:n], &result)
+			if err != nil {
+				fmt.Println("json.Unmarsha err=", err)
 			}
-		} else {
-			fmt.Println("result:", result)
+
+			if slice, ok := result.Result.([]interface{}); ok {
+				fmt.Println(result)
+				if len(slice) == 3 {
+					if slice[0] != w.Work.Hash {
+						// res, _ := slice[1].(string)
+						// seed, err := strconv.Atoi(res) //0:hash 1:seed 2:diff
+						// w.Work.Seed = uint64(seed)
+						// if err != nil {
+						// 	fmt.Println("w.Work.seed transformation err")
+						// 	return
+						// }
+						res, _ := slice[0].(string)
+						w.Work.Hash = res
+						num, _ := slice[1].(string)
+						fmt.Println("res:", res, "height:", num)
+						Uintnum, _ := strconv.Atoi(num)
+						w.Work.Seed = uint64(Uintnum)
+						abort <- true
+					}
+				}
+			} else {
+				fmt.Println("result:", result)
+			}
 		}
 	}
 
