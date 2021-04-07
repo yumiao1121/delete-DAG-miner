@@ -10,12 +10,13 @@ import (
 )
 
 func main() {
-	times := 1
+	times := 2
 	logInit()
 	var exit chan bool
 	exit = make(chan bool, 1)
 	for i := 0; i < times; i++ {
 		go handle.NewWorker(i, exit)
+		//time.Sleep(time.Second * 10)
 	}
 	i := 0
 	for {

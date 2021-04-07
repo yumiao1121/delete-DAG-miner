@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash"
 	"math/big"
+	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -57,8 +58,11 @@ func (w Worker) mine(abort chan bool, ethash *Ethash) {
 		height = w.Work.Seed                             //随机数
 		cache  = ethash.cache(height)                    //这里需要区块高度
 	)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var nonce uint64
-	nonce = 0
+	//nonce = 0
+	nonce = uint64(r.Int63())
+	fmt.Println(nonce)
 search:
 	for {
 		select {
@@ -78,6 +82,9 @@ search:
 				w.NewTcpSubmitWork(digest, nonce, i)
 			}
 			nonce++
+			if nonce < 0 {
+				nonce = uint64(r.Int63())
+			}
 		}
 	}
 }

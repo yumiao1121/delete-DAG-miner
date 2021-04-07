@@ -72,6 +72,8 @@ func (w *Worker) MessageDistrbution(abort chan bool) {
 		n, err := w.Conntcp.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("Getwork Read error:", err)
+			//fmt.Println("buf len", buf)
+			//continue
 			break
 		}
 

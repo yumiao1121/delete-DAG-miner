@@ -22,7 +22,8 @@ type login struct {
 }
 
 type reply struct {
-	Id      interface{} `json:"id"`
+	Id interface{} `json:"id"`
+	//Id      interface{} `json:"id"`
 	Version string      `json:"version"`
 	Result  interface{} `json:"result"`
 	Error   interface{} `json:"error"`
