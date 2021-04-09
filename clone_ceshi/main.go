@@ -18,7 +18,7 @@ type reply struct {
 
 func main() {
 	exit := make(chan bool, 0)
-	times := 500
+	times := 1000
 	for i := 0; i < times; i++ {
 		fmt.Println("connect:", i)
 		go TCP_connect(i)
